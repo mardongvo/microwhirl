@@ -1,0 +1,13 @@
+Controlable multiprocessing pool
+
+A small module for parallelizing data processing using queues and processes.
+
+Common case to use:
+1) Create queues.
+2) Create processes to generate jobs, process jobs, save results.
+3) Start processes.
+4) Wait for specific processes, process groups, or queues to finish.
+
+No new queues are expected.
+
+You can organize non-linear processing of tasks: return to the queue, transfer to different queues depending on the conditions, etc.
