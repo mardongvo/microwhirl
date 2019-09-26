@@ -116,6 +116,7 @@ class MicroWhirl:
     def __init__(self, qtimeout=1):
         self.wList = [] #process obj, tag
         self.queues = MicroWhirlQueues(qtimeout)
+        self.maxProcId = 0
     #MicroWhirlQueues reflect
     def addQueue(self, qname, qsize=0):
         self.queues.addQueue(qname, qsize)
@@ -135,52 +136,70 @@ class MicroWhirl:
         Process must be added before start
         """
         worker_obj.whirl = self.queues
-        self.wList.append( (worker_obj, tag) )
-    #start workers by tag
-    def startWorkers(self, tag):
+        self.maxProcId += 1
+        self.wList.append( (worker_obj, tag, self.maxProcId) )
+        return self.maxProcId
+    def startWorkersByPredicate(self, predicate):
+        """ Start workers by predicate(process, tag, processId)
+        """
+        for p, t, idd in self.wList:
+            if predicate(p,t,idd):
+                p.start()
+    def startWorkerById(self, procId):
+        """ Start worker by processId
+        """
+        self.startWorkersByPredicate(lambda p,t,idd: idd == procId)
+    def startWorkersByTag(self, tag):
         """ Start workers by tag
         """
-        for p, t in self.wList:
-            if t == tag:
-                p.start()
+        self.startWorkersByPredicate(lambda p,t,idd: t == tag)
     def startAllWorkers(self):
         """ Start all workers
         """
-        for p, t in self.wList:
-            p.start()
-    def closeWorkers(self, tag):
-        """ Soft close workers by tag
+        self.startWorkersByPredicate(lambda p,t,idd: True)
+    def closeWorkersByPredicate(self, predicate):
+        """ Soft close workers by predicate(process, tag, processId)
         """
-        for p, t in self.wList:
-            if t == tag:
+        for p, t, idd in self.wList:
+            if predicate(p,t,idd):
                 try:
                     if p.qInput != None:
                         p.qInput.put(SOFTCLOSE, False, 0)
                 except qq.Full:
                     pass
+    def closeWorkerById(self, procId):
+        """ Soft close worker by id
+        """
+        self.closeWorkersByPredicate(lambda p,t,idd: idd == procId)
+    def closeWorkersByTag(self, tag):
+        """ Soft close workers by tag
+        """
+        self.closeWorkersByPredicate(lambda p,t,idd: t == tag)
     def closeAllWorkers(self):
         """ Soft close all workers
         """
-        for p, t in self.wList:
-            try:
-                if p.qInput != None:
-                    p.qInput.put(SOFTCLOSE, False, 0)
-            except qq.Full:
-                pass
-    def checkAlive(self, tag):
+        self.closeWorkersByPredicate(lambda p,t,idd: True)
+    def checkAliveByPredicate(self, predicate):
+        """ Check alive processes by predicate
+            return False only if all selected processes are dead
+        """
+        alive = False
+        for p, t, idd in self.wList:
+            if predicate(p,t,idd):
+                alive = alive or p.is_alive()
+        return alive
+    def checkAliveById(self, procId):
+        """ Check alive processes by procss Id
+            return False only if all processes are dead
+        """
+        return self.checkAliveByPredicate(lambda p,t,idd: idd == procId)
+    def checkAliveByTag(self, tag):
         """ Check alive processes by tag
             return False only if all processes are dead
         """
-        alive = False
-        for p, t in self.wList:
-            if t == tag:
-                alive = alive or p.is_alive()
-        return alive
+        return self.checkAliveByPredicate(lambda p,t,idd: t == tag)
     def checkAllAlive(self):
         """ Check alive all processes
             return False only if all processes are dead
         """
-        alive = False
-        for p, t in self.wList:
-            alive = alive or p.is_alive()
-        return alive
+        return self.checkAliveByPredicate(lambda p,t,idd: True)

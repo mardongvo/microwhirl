@@ -92,7 +92,7 @@ class TestWhirl(unittest.TestCase):
         w.addWorker(SimpleWorkerProcess(test_worker1), 'simple')
         w.closeAllWorkers()
         w.startAllWorkers()
-        while w.checkAlive("simple"): pass # wait for done
+        while w.checkAliveByTag("simple"): pass # wait for done
         try:
             v = w.get("testq")
         except QueueTimeout:
@@ -106,7 +106,7 @@ class TestWhirl(unittest.TestCase):
         w.addWorker(ProcGen(), 'simple')
         w.closeAllWorkers()
         w.startAllWorkers()
-        while w.checkAlive("simple"): pass # wait for done
+        while w.checkAliveByTag("simple"): pass # wait for done
         n = 0
         try:
             while True:
@@ -129,14 +129,14 @@ class TestWhirl(unittest.TestCase):
         w.addWorker(SimpleWorkerProcess(complex_worker), 'proc')
         svr = Saver()
         w.addWorker(svr, 'save')
-        w.closeWorkers('gen')
+        w.closeWorkersByTag('gen')
         w.startAllWorkers()
-        while w.checkAlive("gen"): pass
+        while w.checkAliveByTag("gen"): pass
         while w.queueSize("procq")>0: pass
-        w.closeWorkers("proc")
-        while w.checkAlive("proc"): pass
+        w.closeWorkersByTag("proc")
+        while w.checkAliveByTag("proc"): pass
         while w.queueSize("saveq")>0: pass
-        w.closeWorkers("save")
+        w.closeWorkersByTag("save")
         v = svr.qOutput.get(True)
         for i in [1,2,3,4,5,6]:
             self.assertTrue((i*i) in v, "%d not in result %s" % (i*i,','.join(map(str,v))))
