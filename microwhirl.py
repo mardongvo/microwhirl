@@ -40,9 +40,9 @@ class WhirlProcess(mp.Process):
     """ Base class process
     It can create two queues (by default) to communicate with parent process
     """
-    def __init__(self, whirl, needInput = True, needOutput = True):
+    def __init__(self, needInput = True, needOutput = True):
         mp.Process.__init__(self)
-        self.whirl = whirl
+        self.whirl = None #this field must be set in addWorker
         self.qInput = None
         self.qOutput = None
         if needInput:
@@ -56,8 +56,8 @@ class WhirlProcess(mp.Process):
 class SimpleWorkerProcess(WhirlProcess):
     """ Simple context-free worker
     """
-    def __init__(self, whirl, worker_func):
-        WhirlProcess.__init__(self, whirl, True, False)
+    def __init__(self, worker_func):
+        WhirlProcess.__init__(self, True, False)
         self.worker = worker_func
         self._softclose = False
     def processSignals(self):
@@ -130,8 +130,11 @@ class MicroWhirl:
     def get(self, qname):
         return self.queues.get(qname)
     def addWorker(self, worker_obj, tag=''):
-        """ Add process object to control
+        """ Add process object (worker) to control
+        
+        Process must be added before start
         """
+        worker_obj.whirl = self.queues
         self.wList.append( (worker_obj, tag) )
     #start workers by tag
     def startWorkers(self, tag):

@@ -15,8 +15,8 @@ class ProcGen(WhirlProcess):
 #classes for complex test
 #put numbers from rng to queue
 class Gen(WhirlProcess):
-    def __init__(self, whirl, rng):
-        WhirlProcess.__init__(self, whirl)
+    def __init__(self, rng):
+        WhirlProcess.__init__(self)
         self.rng = rng
     def run(self):
         for i in self.rng:
@@ -33,7 +33,7 @@ def complex_worker(whirl):
 
 class Saver(WhirlProcess):
     def __init__(self, whirl):
-        WhirlProcess.__init__(self, whirl)
+        WhirlProcess.__init__(self)
         self.saveset = []
         self.keepwork = True
     def processSignals(self):
@@ -89,7 +89,7 @@ class TestWhirl(unittest.TestCase):
     def testPQ1(self):
         w = MicroWhirl(2) #timeout 2 sec
         w.addQueue("testq")
-        w.addWorker(SimpleWorkerProcess(w,test_worker1), 'simple')
+        w.addWorker(SimpleWorkerProcess(test_worker1), 'simple')
         w.closeAllWorkers()
         w.startAllWorkers()
         while w.checkAlive("simple"): pass # wait for done
@@ -103,7 +103,7 @@ class TestWhirl(unittest.TestCase):
     def testPQ2(self):
         w = MicroWhirl(2) #timeout 2 sec
         w.addQueue("testq")
-        w.addWorker(ProcGen(w), 'simple')
+        w.addWorker(ProcGen(), 'simple')
         w.closeAllWorkers()
         w.startAllWorkers()
         while w.checkAlive("simple"): pass # wait for done
@@ -123,10 +123,10 @@ class TestWhirl(unittest.TestCase):
         w = MicroWhirl(2) #timeout 2 sec
         w.addQueue("procq")
         w.addQueue("saveq")
-        w.addWorker(Gen(w.queues, [1,2,3]), 'gen')
-        w.addWorker(Gen(w.queues, [4,5,6]), 'gen')
-        w.addWorker(SimpleWorkerProcess(w.queues, complex_worker), 'proc')
-        w.addWorker(SimpleWorkerProcess(w.queues, complex_worker), 'proc')
+        w.addWorker(Gen([1,2,3]), 'gen')
+        w.addWorker(Gen([4,5,6]), 'gen')
+        w.addWorker(SimpleWorkerProcess(complex_worker), 'proc')
+        w.addWorker(SimpleWorkerProcess(complex_worker), 'proc')
         svr = Saver(w.queues)
         w.addWorker(svr, 'save')
         w.closeWorkers('gen')
