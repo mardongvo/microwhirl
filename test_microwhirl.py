@@ -32,7 +32,7 @@ def complex_worker(whirl):
     whirl.put("saveq", v*v)
 
 class Saver(WhirlProcess):
-    def __init__(self, whirl):
+    def __init__(self):
         WhirlProcess.__init__(self)
         self.saveset = []
         self.keepwork = True
@@ -127,7 +127,7 @@ class TestWhirl(unittest.TestCase):
         w.addWorker(Gen([4,5,6]), 'gen')
         w.addWorker(SimpleWorkerProcess(complex_worker), 'proc')
         w.addWorker(SimpleWorkerProcess(complex_worker), 'proc')
-        svr = Saver(w.queues)
+        svr = Saver()
         w.addWorker(svr, 'save')
         w.closeWorkers('gen')
         w.startAllWorkers()
