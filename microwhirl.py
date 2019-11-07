@@ -72,6 +72,29 @@ class SimpleWorkerProcess(WhirlProcess):
             self.processSignals()
             self.worker(self.whirl)
 
+class SoftcloseProcess(WhirlProcess):
+    """ Abstract worker with soft close ability
+    """
+    def __init__(self, needInput = True, needOutput = True):
+        WhirlProcess.__init__(self, needInput, needOutput)
+        self._softclose = False
+    def processSignals(self):
+        try:
+            signal = self.qInput.get(False, 0.001)
+        except qq.Empty:
+            return
+        if signal == SOFTCLOSE:
+            self._softclose = True
+    def run(self):
+        """ Main 
+            <some init>
+            while not self._softclose:
+                self.processSignals()
+                <some work>
+            <some cleanup>
+        """
+        pass
+
 class MicroWhirlQueues:
     """ Pickable queue list to transfer to child processes
     """
