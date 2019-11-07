@@ -51,6 +51,14 @@ class WhirlProcess(mp.Process):
             self.qOutput = mp.Queue()
     def processSignals(self): pass
     def run(self): pass
+    def cleanup(self):
+        for q in [self.qInput, self.qOutput]:
+            if q != None:
+                q.close()
+                try:
+                    while True: q.get_nowait()
+                except qq.Empty:
+                    pass
 
 
 class SimpleWorkerProcess(WhirlProcess):
