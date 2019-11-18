@@ -57,7 +57,7 @@ class WhirlProcess(mp.Process):
                 q.close()
                 try:
                     while True: q.get_nowait()
-                except qq.Empty:
+                except:
                     pass
 
 
@@ -102,6 +102,8 @@ class SoftcloseProcess(WhirlProcess):
             <some cleanup>
         """
         pass
+    def cleanup(self):
+        WhirlProcess.cleanup(self)
 
 class MicroWhirlQueues:
     """ Pickable queue list to transfer to child processes

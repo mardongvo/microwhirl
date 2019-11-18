@@ -55,6 +55,29 @@ class Saver(WhirlProcess):
             self.processSignals()
         self.qOutput.put(self.saveset)
 
+class Gen2(SoftcloseProcess):
+    def __init__(self, rng):
+        WhirlProcess.__init__(self)
+        self.rng = rng
+    def run(self):
+        for i in self.rng:
+            self.whirl.put("procq", i)
+            time.sleep(random.random()) #pause imitation
+
+class Saver2(SoftcloseProcess):
+    def run(self):
+        self.saveset = []
+        while not self._softclose:
+            self.processSignals()
+            try:
+                v = self.whirl.get("saveq")
+                time.sleep(random.random())
+                self.saveset.append(v)
+            except QueueTimeout:
+                pass
+        self.qOutput.put(self.saveset)
+        self.cleanup()
+
 class TestWhirl(unittest.TestCase):
     def testQ1(self):
         w = MicroWhirl()
@@ -128,6 +151,30 @@ class TestWhirl(unittest.TestCase):
         w.addWorker(SimpleWorkerProcess(complex_worker), 'proc')
         w.addWorker(SimpleWorkerProcess(complex_worker), 'proc')
         svr = Saver()
+        w.addWorker(svr, 'save')
+        w.closeWorkersByTag('gen')
+        w.startAllWorkers()
+        while w.checkAliveByTag("gen"): pass
+        while w.queueSize("procq")>0: pass
+        w.closeWorkersByTag("proc")
+        while w.checkAliveByTag("proc"): pass
+        while w.queueSize("saveq")>0: pass
+        w.closeWorkersByTag("save")
+        v = svr.qOutput.get(True)
+        for i in [1,2,3,4,5,6]:
+            self.assertTrue((i*i) in v, "%d not in result %s" % (i*i,','.join(map(str,v))))
+        w.closeAllWorkers()
+        w.closeAllQueues()
+        time.sleep(1)
+    def testPQComplex2(self):
+        w = MicroWhirl(2) #timeout 2 sec
+        w.addQueue("procq")
+        w.addQueue("saveq")
+        w.addWorker(Gen2([1,2,3]), 'gen')
+        w.addWorker(Gen2([4,5,6]), 'gen')
+        w.addWorker(SimpleWorkerProcess(complex_worker), 'proc')
+        w.addWorker(SimpleWorkerProcess(complex_worker), 'proc')
+        svr = Saver2()
         w.addWorker(svr, 'save')
         w.closeWorkersByTag('gen')
         w.startAllWorkers()
